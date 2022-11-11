@@ -13,7 +13,7 @@ app.use(cors());
 app.use("/users", userRoutes);
 app.use("/products", productRoutes);
 app.use("/carts", cartRoutes);
-
+app.get("/", (req, res) => res.send("hello"));
 app.listen(PORT, async () => {
   await connect();
   console.log("server running");
