@@ -10,21 +10,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  name: {
-    type: String,
-    required: true,
-  },
-  age: {
-    type: Number,
-  },
-  gender: {
-    type: String,
-    enum: ["male", "female"],
-  },
   type: {
     type: String,
-    required: true,
     enum: ["customer", "seller"],
+    required: true,
   },
 });
 

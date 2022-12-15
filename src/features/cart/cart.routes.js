@@ -4,36 +4,52 @@ const authMiddleWare = require("../../authMiddleware/authMiddleware");
 
 const app = express.Router();
 
-app.get("/:id", authMiddleWare, async (req, res) => {
-  console.log(req.params.id);
-  if (req.id !== req.params.id) {
-    return res
-      .status(401)
-      .send({ error: true, message: "Something went wrong" });
-  }
+app.get("/", authMiddleWare, async (req, res) => {
   try {
-    let cart = await Cart.find({ user: req.id }).populate("product");
+    let cart = await Cart.find({ user: req.id, delivered: false }).populate(
+      "product"
+    );
     res.status(200).send(cart);
   } catch (e) {
     res.status(401).send({ error: true, message: e });
   }
 });
-
-app.post("/", async (req, res) => {
-  const { product, user, quantity, delivered } = req.body;
-  console.log(req.body);
+app.get("/recent", authMiddleWare, async (req, res) => {
   try {
-    let cart = await Cart.create({ product, user, quantity, delivered });
-    res.status(200).send(cart);
+    const items = await Cart.find({ user: req.id, delivered: true }).populate(
+      "product"
+    );
+
+    res.send({ error: false, data: items });
+  } catch (e) {
+    res.send({ error: true, message: e.message });
+  }
+});
+app.post("/", authMiddleWare, async (req, res) => {
+  const { product, quantity = 1, delivered = false } = req.body;
+  try {
+    let item = await Cart.create({
+      product,
+      user: req.id,
+      quantity,
+      delivered,
+    });
+    let cartItem = await item.populate("product");
+    res.status(200).send(cartItem);
   } catch (e) {
     res.status(401).send({ error: true, message: "Something went wrong" });
   }
 });
 
-app.patch("/:cartId", async (req, res) => {
+app.patch("/checkout", authMiddleWare, async (req, res) => {
+  const { token: t } = req.headers;
+  await Cart.updateMany({ user: req.id }, { ...req.body });
+  res.send("hello");
+});
+app.patch("/:id", async (req, res) => {
   try {
     let cart = await Cart.findByIdAndUpdate(
-      req.params.cartId,
+      req.params.id,
       {
         ...req.body,
       },
@@ -47,9 +63,10 @@ app.patch("/:cartId", async (req, res) => {
   }
 });
 
-app.delete("/:cartId", authMiddleWare, async (req, res) => {
+app.delete("/:cartId", async (req, res) => {
   try {
-    await Cart.findByIdAndDelete(req.params.cartId);
+    let deletedItem = await Cart.findByIdAndDelete(req.params.cartId);
+
     res
       .status(200)
       .send({ error: false, message: "cartItem deleted successfully" });
